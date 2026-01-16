@@ -68,6 +68,12 @@ YourHotSpot,YourPassword,1
 Higher priority number = higher priority (tried first).
 Automatically connects to the next one if the first one is not available.
 
+If the connection requires more advanced settings (like enterprise wifi), then you can add those settings in the following format:
+
+```
+SSID,PASSWORD,priority,email_identity,path_to_cert,altsubject
+```
+
 # Miscellaneous
 
 Here some commands that might be useful:
