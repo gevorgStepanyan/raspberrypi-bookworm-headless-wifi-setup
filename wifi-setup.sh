@@ -24,7 +24,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
 fi
 
 # Read and process each line from the config file
-while IFS=',' read -r ssid password priority; do
+while IFS=',' read -r ssid password priority identity ca_cert altsubject; do
     # Skip empty lines or comments
     [[ -z "$ssid" || "$ssid" =~ ^# ]] && continue
     
@@ -32,16 +32,41 @@ while IFS=',' read -r ssid password priority; do
     ssid=$(echo "$ssid" | xargs)
     password=$(echo "$password" | xargs)
     priority=$(echo "$priority" | xargs)
+    identity=$(echo "$identity" | xargs)
+    ca_cert=$(echo "$ca_cert" | xargs)
+    altsubject=$(echo "$altsubject" | xargs)
+    
+    # Prepare nmcli arguments
+    common_args=(
+        connection.autoconnect yes
+        connection.autoconnect-priority "$priority"
+    )
+    
+    auth_args=()
+    if [ -n "$identity" ]; then
+        # WPA-EAP (eduroam)
+        auth_args+=(
+            wifi-sec.key-mgmt wpa-eap
+            802-1x.eap peap
+            802-1x.phase2-auth mschapv2
+            802-1x.identity "$identity"
+            802-1x.password "$password"
+        )
+        [ -n "$ca_cert" ] && auth_args+=(802-1x.ca-cert "$ca_cert")
+        [ -n "$altsubject" ] && auth_args+=(802-1x.altsubject-matches "$altsubject")
+    else
+        # WPA-PSK
+        auth_args+=(
+            wifi-sec.key-mgmt wpa-psk
+            wifi-sec.psk "$password"
+        )
+    fi
     
     # Check if connection already exists
     if nmcli connection show "$ssid" >/dev/null 2>&1; then
         log_message "Connection '$ssid' already exists, updating..."
         # Update existing connection
-        nmcli connection modify "$ssid" \
-            wifi-sec.key-mgmt wpa-psk \
-            wifi-sec.psk "$password" \
-            connection.autoconnect yes \
-            connection.autoconnect-priority "$priority"
+        nmcli connection modify "$ssid" "${common_args[@]}" "${auth_args[@]}"
     else
         log_message "Creating new connection for '$ssid'..."
         # Create new connection
@@ -50,10 +75,8 @@ while IFS=',' read -r ssid password priority; do
             con-name "$ssid" \
             ifname wlan0 \
             ssid "$ssid" \
-            wifi-sec.key-mgmt wpa-psk \
-            wifi-sec.psk "$password" \
-            connection.autoconnect yes \
-            connection.autoconnect-priority "$priority"
+            "${common_args[@]}" \
+            "${auth_args[@]}"
     fi
 done < "$CONFIG_FILE"
 

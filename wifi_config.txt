@@ -1,14 +1,20 @@
 # WiFi Configuration File
-# Format: SSID,password,priority
+# Format: SSID,password,priority[,identity,ca_cert,altsubject]
+# 
+# For WPA-PSK (Normal WiFi):
+# SSID,password,priority
+#
+# For WPA-EAP (eduroam):
+# SSID,password,priority,identity,ca_cert,altsubject
+#
 # Higher priority number = higher priority (tried first)
 
 # WiFi Networks
 # Primary network (highest priority)
-NetWorkName,NetworkPassword,3
+# NetWorkName,NetworkPassword,3
 
 # Backup network (lowest priority)
-Net Work Name 2,password2,1
+# Net Work Name 2,password2,1
 
-# You can add more networks following the same format
-# SSID,password,priority 
-
+# Example Advanced WiFi
+# SSID,PASSWORD,priority,email_identity,path_to_cert,altsubject
