@@ -1,0 +1,10 @@
+[Unit]
+Description=Periodically check WiFi connection
+
+[Timer]
+OnBootSec=20
+OnUnitActiveSec=30
+Unit=check-wifi-setup.service
+
+[Install]
+WantedBy=timers.target

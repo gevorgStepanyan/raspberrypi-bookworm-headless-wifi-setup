@@ -2,6 +2,8 @@
 
 This service automatically configures and manages WiFi connections on your Raspberry Pi using NetworkManager. No need for a monitor or keyboard. Can directly edit the config file on the SD card from your computer.
 
+>Note: The instructions below are without the auto-reconfig system. If you want that system(neeed for eduroam or enterprise systems) check that service's installation [here](./auto_config_readme.md).
+
 ## Files
 
 Place these files directly in the root folder of your Raspberry Pi SD card. These will then be available under `/boot/firmware/` when you are on the PI via ssh:
@@ -13,12 +15,13 @@ Place these files directly in the root folder of your Raspberry Pi SD card. Thes
 
 ## Installation
 
-1. Copy all files directly to the root folder of your Raspberry Pi micro SD card:
+1. Copy these files directly to the root folder of your Raspberry Pi micro SD card:
 
 - `wifi_config.txt`
 - `wifi-setup.sh`
 - `wifi-setup.service`
 - `setup-wifi-service.sh`
+  
 
 2. Insert the SD card into your Raspberry Pi and power it on.
 
@@ -51,7 +54,9 @@ sudo /boot/firmware/setup-wifi-service.sh
 sudo nano /boot/firmware/wifi_config.txt
 ```
 
-The format you can see in the example file.
+### Structure of wifi_config.txt
+
+There are two ways to configure connection parameters. If the network you are trying to connect to is a simple, non-enterprise one then you can use the format in the example below:
 
 ```
 SSID,password,priority
@@ -68,10 +73,20 @@ YourHotSpot,YourPassword,1
 Higher priority number = higher priority (tried first).
 Automatically connects to the next one if the first one is not available.
 
+#### Enterprise networks
 If the connection requires more advanced settings (like enterprise wifi), then you can add those settings in the following format:
 
 ```
-SSID,PASSWORD,priority,email_identity,path_to_cert,altsubject
+SSID,PASSWORD,priority,email_identity,path_to_cert,path_to_pass_file
+```
+
+Here,
+* `email_itentity` is the username you use to connect to the network. Usually it is your email. For example, `baomao@bigcorp.com`.
+* `path_to_cert` if not empty, is the path to the `.pem` certificate that you need to connect to the network. Usually it is provided by the company or the installer script (In case of eduroam the installer can be found [here](https://cat.eduroam.org).
+* `path_to_pass_file` if not empty, the connection will use the credentials from this file to connect to the network. This worked with edoroam. 
+>Note: At the moment, it is a simple text file containing these fields in unprotected form:
+```
+802-1x.password:your_password
 ```
 
 # Miscellaneous

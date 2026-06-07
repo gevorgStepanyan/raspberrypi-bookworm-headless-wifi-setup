@@ -24,7 +24,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
 fi
 
 # Read and process each line from the config file
-while IFS=',' read -r ssid password priority identity ca_cert altsubject; do
+while IFS=',' read -r ssid password priority identity ca_cert pass_file; do
     # Skip empty lines or comments
     [[ -z "$ssid" || "$ssid" =~ ^# ]] && continue
     
@@ -34,7 +34,7 @@ while IFS=',' read -r ssid password priority identity ca_cert altsubject; do
     priority=$(echo "$priority" | xargs)
     identity=$(echo "$identity" | xargs)
     ca_cert=$(echo "$ca_cert" | xargs)
-    altsubject=$(echo "$altsubject" | xargs)
+    pass_file=$(echo "$pass_file" | xargs)
     
     # Prepare nmcli arguments
     common_args=(
@@ -44,16 +44,15 @@ while IFS=',' read -r ssid password priority identity ca_cert altsubject; do
     
     auth_args=()
     if [ -n "$identity" ]; then
-        # WPA-EAP (eduroam)
+        # WPA-EAP (enterprise)
         auth_args+=(
+            802-1x.identity "$identity"
             wifi-sec.key-mgmt wpa-eap
             802-1x.eap peap
             802-1x.phase2-auth mschapv2
-            802-1x.identity "$identity"
             802-1x.password "$password"
         )
         [ -n "$ca_cert" ] && auth_args+=(802-1x.ca-cert "$ca_cert")
-        [ -n "$altsubject" ] && auth_args+=(802-1x.altsubject-matches "$altsubject")
     else
         # WPA-PSK
         auth_args+=(
@@ -82,9 +81,33 @@ done < "$CONFIG_FILE"
 
 # Try to connect to the highest priority network
 highest_priority_ssid=$(nmcli -t -f NAME,autoconnect-priority connection show | sort -t: -k2 -nr | head -n1 | cut -d: -f1)
-if [ ! -z "$highest_priority_ssid" ]; then
+if [ -n "$highest_priority_ssid" ]; then
     log_message "Attempting to connect to highest priority network: $highest_priority_ssid"
-    nmcli connection up "$highest_priority_ssid"
+
+    # Find pass_file for the selected SSID from config
+    selected_pass_file=""
+    selected_identity=""
+
+    while IFS=',' read -r ssid password priority identity ca_cert pass_file; do
+        [[ -z "$ssid" || "$ssid" =~ ^# ]] && continue
+
+        ssid=$(echo "$ssid" | xargs)
+        identity=$(echo "$identity" | xargs)
+        pass_file=$(echo "$pass_file" | xargs)
+
+        if [ "$ssid" = "$highest_priority_ssid" ]; then
+            selected_identity="$identity"
+            selected_pass_file="$pass_file"
+            break
+        fi
+    done < "$CONFIG_FILE"
+
+    if [ -n "$selected_pass_file" ]; then
+        log_message "Using passwd-file for enterprise: $selected_pass_file"
+        nmcli connection up "$highest_priority_ssid" passwd-file "$selected_pass_file"
+    else
+        nmcli connection up "$highest_priority_ssid"
+    fi
 fi
 
 log_message "WiFi setup completed" 

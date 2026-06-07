@@ -1,0 +1,8 @@
+sudo nmcli connection add type wifi con-name <your_connection_name> ifname wlan0 ssid <network_ssid>
+sudo nmcli connection modify <your_connection_name> 
+    802-1x.identity <your_email> 
+    wifi-sec.key-mgmt wpa-eap 
+    802-1x.eap peap 
+    802-1x.phase2-auth mschapv2 
+    802-1x.ca-cert "/etc/NetworkManager/.config/cat_installer/ca.pem"
+sudo nmcli connection up <your_connection_name> passwd-file /etc/NetworkManager/mypass.passwd

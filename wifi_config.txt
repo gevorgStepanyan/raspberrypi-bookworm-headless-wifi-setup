@@ -4,8 +4,8 @@
 # For WPA-PSK (Normal WiFi):
 # SSID,password,priority
 #
-# For WPA-EAP (eduroam):
-# SSID,password,priority,identity,ca_cert,altsubject
+# For WPA-EAP (enterprise):
+# SSID,password,priority,identity,ca_cert,pass_file
 #
 # Higher priority number = higher priority (tried first)
 
